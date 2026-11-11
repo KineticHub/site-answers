@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prices | Harbour Cycle Repair</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site"><div class="wrap">
+    <a class="brand" href="/">Harbour Cycle Repair</a>
+    <nav>
+      <a href="/services.html">Services</a>
+      <a href="/pricing.html" aria-current="page">Prices</a>
+      <a href="/book.html">Book a repair</a>
+      <a href="/faq.html">Questions</a>
+      <a href="/about.html">About</a>
+    </nav>
+  </div></header>
+
+  <!-- This page is built by script on purpose: without JavaScript it has no content.
+       It tests whether the crawler notices and renders it in a browser. -->
+  <main><div class="wrap" id="app"></div></main>
+
+  <footer class="site"><div class="wrap">
+    Demo site for testing. Harbour Cycle Repair is a fictional business.
+  </div></footer>
+
+  <script>
+    const prices = [
+      ["Puncture repair", "$15"],
+      ["Basic tune-up", "$60"],
+      ["Full service", "$140"],
+      ["Wheel truing", "$25 per wheel"],
+      ["Brake service", "$35"],
+      ["Gear service", "$35"],
+    ];
+    const rows = prices.map(([name, price]) => `<tr><td>${name}</td><td>${price}</td></tr>`).join("");
+    document.getElementById("app").innerHTML = `
+      <h1>Prices</h1>
+      <p>Prices are for labour. Parts are extra, and we tell you the cost of parts before fitting them.</p>
+      <table><tr><th>Service</th><th>Price</th></tr>${rows}</table>
+      <h2>Paying</h2>
+      <p>You pay when you collect your bike.</p>`;
+  </script>
+  <script src="http://localhost:8100/widget.js" defer></script>
+</body>
+</html>

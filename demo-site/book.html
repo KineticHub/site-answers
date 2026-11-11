@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book a repair | Harbour Cycle Repair</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site"><div class="wrap">
+    <a class="brand" href="/">Harbour Cycle Repair</a>
+    <nav>
+      <a href="/services.html">Services</a>
+      <a href="/pricing.html">Prices</a>
+      <a href="/book.html" aria-current="page">Book a repair</a>
+      <a href="/faq.html">Questions</a>
+      <a href="/about.html">About</a>
+    </nav>
+  </div></header>
+
+  <main><div class="wrap">
+    <div class="booking-heading">
+      <h1>Book a repair</h1>
+      <button type="button" id="fill-demo">Fill demo form</button>
+    </div>
+    <p>Tell us about the bike and when you would like to drop it off. We confirm by email.</p>
+
+    <div id="banner" role="alert" hidden></div>
+
+    <!-- The form is deliberately unhelpful when it fails: it shows one vague message.
+         That is the situation the assistant is meant to explain. -->
+    <form id="booking" name="booking" action="/book.html" method="post" novalidate class="card">
+      <div class="field">
+        <label for="name">Your name</label>
+        <input type="text" id="name" name="name" required autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="phone">Phone</label>
+        <input type="tel" id="phone" name="phone" required pattern="[0-9]{10}" title="10 digits, numbers only" autocomplete="tel">
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="postcode">Postcode</label>
+        <input type="text" id="postcode" name="postcode" required pattern="[0-9]{5}" title="5 digits" autocomplete="postal-code">
+      </div>
+      <div class="field">
+        <label for="service">Service</label>
+        <select id="service" name="service" required>
+          <option value="">Choose a service</option>
+          <option>Puncture repair</option>
+          <option>Basic tune-up</option>
+          <option>Full service</option>
+          <option>Wheel truing</option>
+          <option>Brake service</option>
+          <option>Gear service</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="date">Drop-off date</label>
+        <input type="date" id="date" name="date" required>
+      </div>
+      <div class="field">
+        <label for="photo">Photo of the problem (optional)</label>
+        <input type="file" id="photo" name="photo" accept="image/jpeg,image/png" data-max-bytes="5242880">
+        <div class="hint">JPG or PNG, up to 5 MB.</div>
+      </div>
+      <div class="field">
+        <label for="notes">Anything else we should know?</label>
+        <textarea id="notes" name="notes" rows="3" maxlength="500"></textarea>
+      </div>
+      <div class="field check">
+        <input type="checkbox" id="terms" name="terms" required>
+        <label for="terms">I agree that parts are charged on top of labour.</label>
+      </div>
+      <button type="submit" id="submit" disabled>Request booking</button>
+    </form>
+  </div></main>
+
+  <footer class="site"><div class="wrap">
+    Demo site for testing. Harbour Cycle Repair is a fictional business.
+  </div></footer>
+
+  <script>
+    const form = document.getElementById("booking");
+    const banner = document.getElementById("banner");
+    const submit = document.getElementById("submit");
+    const terms = document.getElementById("terms");
+    const date = document.getElementById("date");
+    const photo = document.getElementById("photo");
+
+    // Earliest drop-off is tomorrow.
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateValue = (day) => [
+      day.getFullYear(), String(day.getMonth() + 1).padStart(2, "0"), String(day.getDate()).padStart(2, "0"),
+    ].join("-");
+    date.min = dateValue(tomorrow);
+
+    document.getElementById("fill-demo").addEventListener("click", () => {
+      const dropOff = new Date(tomorrow);
+      if (dropOff.getDay() === 0) dropOff.setDate(dropOff.getDate() + 1);
+      const sample = {
+        name: "Alex Example", phone: "2025550142", email: "alex@example.com",
+        postcode: "12345", service: "Basic tune-up", date: dateValue(dropOff),
+        notes: "Please check the brakes and gears.",
+      };
+      for (const [name, value] of Object.entries(sample)) {
+        const field = form.elements.namedItem(name);
+        if (field.value) continue;
+        field.value = value;
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+        field.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
+
+    // The button stays disabled until the terms box is ticked.
+    terms.addEventListener("change", () => { submit.disabled = !terms.checked; });
+
+    // Closed on Sundays.
+    date.addEventListener("input", () => {
+      const picked = date.value ? new Date(date.value + "T12:00:00") : null;
+      date.setCustomValidity(picked && picked.getDay() === 0 ? "We are closed on Sundays. Please pick another day." : "");
+    });
+
+    // Photo must be JPG or PNG and no larger than 5 MB.
+    photo.addEventListener("change", () => {
+      const file = photo.files[0];
+      let problem = "";
+      if (file && !["image/jpeg", "image/png"].includes(file.type)) problem = "The photo must be a JPG or PNG.";
+      else if (file && file.size > Number(photo.dataset.maxBytes)) problem = "The photo must be 5 MB or smaller.";
+      photo.setCustomValidity(problem);
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      banner.hidden = false;
+      if (!form.checkValidity()) {
+        banner.className = "banner error";
+        banner.textContent = "Something isn't right. Please check the form and try again.";
+        return;
+      }
+      banner.className = "banner ok";
+      banner.textContent = "Thanks. This is a demo, so nothing was sent.";
+      form.reset();
+      submit.disabled = true;
+    });
+  </script>
+  <script src="http://localhost:8100/widget.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /admin/
+
+# Deliberate test flaws: one training crawler and one AI search crawler are shut out.
+User-agent: GPTBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+Sitemap: http://localhost:8101/sitemap.xml

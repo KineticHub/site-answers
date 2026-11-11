@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Site Answers</title>
+  <style>
+    :root {
+      --ink: #1d2b36; --muted: #5b6b78; --line: #d9e0e6; --bg: #f6f8fa; --card: #fff;
+      --accent: #0b6e6e; --warn: #8a5a00; --warn-bg: #fff4d6; --bad: #8c1d18; --bad-bg: #fdecea;
+      --good: #14532d; --good-bg: #e6f4ef;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--bg); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 24px; margin: 0 0 4px; }
+    h2 { font-size: 17px; margin: 28px 0 10px; }
+    p { margin: 0 0 10px; }
+    .muted { color: var(--muted); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+    form.row { display: flex; flex-wrap: wrap; gap: 8px; }
+    input[type="text"], input[type="number"] { padding: 9px 10px; border: 1px solid #b8c4ce; border-radius: 8px; font: inherit; }
+    input[type="text"] { flex: 1; min-width: 220px; }
+    input[type="number"] { width: 110px; }
+    button { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 9px 16px; font: inherit; cursor: pointer; }
+    button:disabled { background: #9fb3b3; cursor: default; }
+    label.small { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .tile { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+    .tile b { display: block; font-size: 24px; line-height: 1.2; }
+    .tile span { color: var(--muted); font-size: 13px; }
+    .scroll { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; background: var(--card); font-size: 14px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    td a { color: var(--accent); overflow-wrap: anywhere; }
+    .tag { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+    .tag.ok { background: var(--good-bg); color: var(--good); }
+    .tag.blocked, .tag.skipped, .tag.duplicate, .tag.js { background: var(--warn-bg); color: var(--warn); }
+    .tag.error, .tag.no { background: var(--bad-bg); color: var(--bad); }
+    pre { background: #14323f; color: #e6f0f3; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 0 0 8px; font-size: 13px; }
+    .status { margin-top: 10px; }
+    .preparedness { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px 24px; }
+    .preparedness h3 { margin: 0 0 2px; }
+    .preparedness p { margin: 0; }
+    .preparedness .score { font-size: 30px; font-weight: 700; color: var(--accent); }
+    .preparedness .score-pending { font-weight: 600; }
+    .preparedness a { color: var(--accent); }
+    .preparedness .next-fix { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+    .answer { white-space: pre-wrap; margin-top: 10px; }
+    h3 { font-size: 15px; margin: 18px 0 6px; }
+    .finding { border-top: 1px solid var(--line); padding: 12px 0; }
+    .finding:first-of-type { border-top: 0; }
+    .finding p { margin: 4px 0 0; }
+    .finding .head { font-weight: 600; }
+    .finding ul { margin: 6px 0 0; padding-left: 18px; }
+    .finding a { color: var(--accent); overflow-wrap: anywhere; }
+    .audit-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 16px; }
+    .audit-summary strong { margin-right: 4px; }
+    .audit-overview { background: var(--bg); border-radius: 8px; padding: 12px; margin: 12px 0 0; }
+    .audit-overview p { margin: 4px 0 0; }
+    .audit-finding { border: 1px solid var(--line); border-left-width: 3px; border-radius: 8px; padding: 10px 12px; margin-top: 8px; }
+    .audit-finding:first-of-type { border-top: 1px solid var(--line); }
+    .audit-finding.high { border-left-color: var(--bad); }
+    .audit-finding.medium { border-left-color: var(--warn); }
+    .report-group { border-top: 1px solid var(--line); margin-top: 12px; }
+    .report-group > summary { font-weight: 600; }
+    .tag.high, .tag.missing { background: var(--bad-bg); color: var(--bad); }
+    .tag.medium, .tag.partly { background: var(--warn-bg); color: var(--warn); }
+    .tag.low { background: #e9eef2; color: var(--muted); }
+    .tag.answered { background: var(--good-bg); color: var(--good); }
+    blockquote { margin: 6px 0 0; padding-left: 10px; border-left: 3px solid var(--line); }
+    details summary { cursor: pointer; color: var(--accent); margin-top: 12px; }
+    .warning { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: var(--warn-bg); color: var(--warn); border: 1px solid #f0d58a; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Site Answers</h1>
+  <p class="muted">Read your whole website, then let visitors ask it questions.</p>
+
+  <div class="card">
+    <form class="row" id="crawl-form">
+      <input type="text" id="url" placeholder="https://your-site.example" aria-label="Website address" required>
+      <label class="small">Page limit <input type="number" id="max-pages" value="200" min="1" max="2000"></label>
+      <button type="submit" id="crawl-button">Read this site</button>
+    </form>
+    <label class="small" style="margin-top:10px">
+      <input type="checkbox" id="allow-invalid-cert">
+      Read the site even if its security certificate is invalid
+    </label>
+    <p class="muted" style="margin:2px 0 0 22px;font-size:13px">Leave this off unless it is your own site. Pages are then read without checking who is serving them.</p>
+    <div class="status muted" id="status" aria-live="polite"></div>
+    <div class="warning" id="cert-warning" hidden></div>
+    <label class="small" id="picker-row" hidden style="margin-top:10px">Sites you have read
+      <select id="picker" style="padding:6px 8px;border:1px solid #b8c4ce;border-radius:8px;font:inherit"></select>
+    </label>
+  </div>
+
+  <div id="result" hidden>
+    <section aria-labelledby="preparedness-title">
+      <h2 id="preparedness-title">Search preparedness</h2>
+      <div class="card preparedness" id="preparedness"></div>
+    </section>
+
+    <h2 id="site-title"></h2>
+    <div class="tiles" id="tiles"></div>
+
+    <h2>What to fix so AI search can cite you</h2>
+    <div class="card">
+      <p id="report-intro">Checks whether AI crawlers can read the site, then uses AI to test about 20 questions your audience would ask against your pages, and to look for contradictions. It takes about a minute.</p>
+      <button type="button" id="report-button">Build the report</button>
+      <span class="muted" id="report-status" style="margin-left:10px" aria-live="polite"></span>
+      <div id="report" hidden></div>
+    </div>
+
+    <h2>Pages</h2>
+    <div class="card scroll">
+      <table>
+        <thead><tr><th>Page</th><th>Result</th><th>Found by</th><th>Note</th></tr></thead>
+        <tbody id="pages"></tbody>
+      </table>
+      <p class="muted" id="pages-note" hidden style="margin-top:10px"></p>
+    </div>
+
+    <h2>Add the assistant to your site</h2>
+    <div class="card">
+      <p>Paste this line before <code>&lt;/body&gt;</code> on every page:</p>
+      <pre id="snippet"></pre>
+      <p class="muted" id="ai-status"></p>
+    </div>
+
+    <h2>Try a question</h2>
+    <div class="card">
+      <form class="row" id="ask-form">
+        <input type="text" id="question" placeholder="What are your opening hours?" aria-label="Question" required maxlength="1000">
+        <button type="submit" id="ask-button">Ask</button>
+      </form>
+      <div class="answer" id="answer"></div>
+    </div>
+
+    <h2>Where visitors got stuck</h2>
+    <div class="card scroll">
+      <p class="muted" id="no-friction">Nobody has got stuck yet.</p>
+      <table id="friction-table" hidden>
+        <thead><tr><th>Page</th><th>What happened</th><th>Why</th><th>Times</th><th>Help offered</th></tr></thead>
+        <tbody id="friction"></tbody>
+      </table>
+      <p class="muted" id="jev-status" style="margin-top:10px"></p>
+    </div>
+
+    <h2>Questions visitors have asked</h2>
+    <div class="card scroll">
+      <p class="muted" id="no-questions">No questions yet.</p>
+      <table id="questions-table" hidden>
+        <thead><tr><th>Question</th><th>Type</th><th>Answered from the site?</th><th>What the site is missing</th></tr></thead>
+        <tbody id="questions"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  let siteId = null;
+  let scope = null;
+  let timer = null;
+  const MAX_ROWS = 300;
+
+  const STATUS_WORDS = { ok: "Read", blocked: "Blocked", error: "Failed", skipped: "Skipped", duplicate: "Duplicate" };
+  const VIA_WORDS = { start: "Start page", sitemap: "Sitemap", link: "Link" };
+  const CATEGORY_WORDS = {
+    fact: "Fact", how_to: "How-to", whole_site: "Whole site", navigation: "Finding a page",
+    form_help: "Form help", off_topic: "Off topic",
+  };
+
+  const KIND_WORDS = {
+    rage_click: "Clicked repeatedly on", dead_click: "Clicked a switched-off", failed_submit: "Could not submit with",
+  };
+  const CAUSE_WORDS = {
+    form_blocked: "The form refused the entry", dead_element: "It looks clickable but is not",
+    no_feedback: "It gave no visible response", not_frustrated: "Normal use, not a problem",
+    unknown: "Not judged",
+  };
+
+  const SEVERITY_WORDS = { high: "Fix first", medium: "Worth fixing", low: "For information" };
+  const VERDICT_WORDS = { missing: "Not answered", partly: "Partly answered", answered: "Answered" };
+
+  function el(tagName, props = {}, ...children) {
+    const node = document.createElement(tagName);
+    for (const [key, value] of Object.entries(props)) {
+      if (key === "class") node.className = value;
+      else if (key === "text") node.textContent = value;
+      else node.setAttribute(key, value);
+    }
+    node.append(...children.filter((child) => child !== null && child !== ""));
+    return node;
+  }
+
+  function pageLink(page) {
+    return el("a", { href: page.url, target: "_blank", rel: "noopener", text: page.title || page.url });
+  }
+
+  function findingBlock(f) {
+    const pages = f.pages.map((p) => el("li", {}, pageLink(p), p.note ? ` — ${p.note}` : ""));
+    if (f.more) pages.push(el("li", { text: `and ${f.more} more` }));
+    return el("div", { class: `finding audit-finding ${f.severity}` },
+      el("div", { class: "head" }, tag(SEVERITY_WORDS[f.severity], f.severity), " ", f.title),
+      el("p", { text: f.detail }),
+      el("p", {}, el("b", { text: "Fix: " }), f.fix),
+      pages.length ? el("ul", {}, ...pages) : null,
+    );
+  }
+
+  function questionBlock(q) {
+    return el("div", { class: "finding" },
+      el("div", { class: "head" }, tag(VERDICT_WORDS[q.verdict], q.verdict), " ", q.question),
+      q.missing ? el("p", { text: q.missing }) : null,
+      q.verdict !== "answered" && q.add_to ? el("p", {}, el("b", { text: "Add the answer to: " }), pageLink(q.add_to)) : null,
+      q.verdict !== "missing" && q.sources.length
+        ? el("p", { class: "muted" }, "Found on: ", ...q.sources.flatMap((s, i) => [i ? ", " : "", pageLink(s)]))
+        : null,
+    );
+  }
+
+  function scoreCard(title, score, explanation, note = null, fix = null) {
+    return el("div", {},
+      el("h3", { text: title }),
+      el("p", { class: score === null ? "score-pending" : "score", text: score === null ? "Pending" : `${score}%` }),
+      el("p", {}, explanation),
+      note ? el("p", { class: "muted" }, note) : null,
+      fix ? el("p", { class: "next-fix" }, el("strong", { text: "Fix first" }), " · ", fix) : null,
+    );
+  }
+
+  function renderPreparedness(site, pages, row) {
+    const box = $("preparedness");
+    const seoTitle = "SEO · Search engines";
+    const geoTitle = "GEO · AI search";
+    if (site.status !== "done") {
+      const explanation = site.status === "crawling" ? "Waiting for the site read to finish." : "Read the site successfully to see this score.";
+      box.replaceChildren(scoreCard(seoTitle, null, explanation), scoreCard(geoTitle, null, explanation));
+      return;
+    }
+
+    // Blocked paths can be private by design. Count successful and failed public fetches.
+    const checked = pages.filter((p) => p.status === "ok" || p.status === "error");
+    const issues = { failed: [], needsJs: [], noindex: [] };
+    let ready = 0;
+    for (const page of checked) {
+      const failed = page.status === "error";
+      const needsJs = !failed && page.needs_js;
+      const noindex = !failed && /\b(?:noindex|none)\b/i.test(page.robots_meta || "");
+      if (failed) issues.failed.push(page);
+      if (needsJs) issues.needsJs.push(page);
+      if (noindex) issues.noindex.push(page);
+      if (!failed && !needsJs && !noindex && !site.certificate_problem) ready++;
+    }
+    const seo = checked.length ? Math.round(100 * ready / checked.length) : null;
+    const seoWhy = site.certificate_problem
+      ? "The site has an invalid security certificate."
+      : checked.length
+        ? `${ready} of ${checked.length} checked pages loaded with readable HTML and allowed indexing.`
+        : "No public pages could be checked.";
+    const seoIssues = [
+      issues.failed.length && `${issues.failed.length} failed to load`,
+      issues.needsJs.length && `${issues.needsJs.length} needed JavaScript to show content`,
+      issues.noindex.length && `${issues.noindex.length} disallowed indexing`,
+    ].filter(Boolean);
+    const seoNote = !site.certificate_problem && seoIssues.length
+      ? `${new Intl.ListFormat("en").format(seoIssues)}.`
+      : null;
+
+    const report = row?.status === "done" && row.started_at >= site.finished_at ? row.report : null;
+    const questions = report?.ai?.questions ?? [];
+    const answered = questions.filter((q) => q.verdict === "answered").length;
+    const geo = questions.length ? Math.round(100 * answered / questions.length) : null;
+    const geoWhy = questions.length
+      ? `The site fully answered ${answered} of ${questions.length} questions tested.`
+      : row?.status === "building" ? "The gap report is checking what your site can answer."
+      : report?.ai_note || el("a", { href: "#report-button", text: "Build a gap report for this read to get a score." });
+    const crawlerBlock = report?.access?.find((finding) => finding.title.startsWith("robots.txt shuts out "));
+    const geoNote = questions.length && crawlerBlock ? `${crawlerBlock.title}.` : null;
+    const seoFix = site.certificate_problem ? "Renew or replace the site’s security certificate."
+      : issues.failed.length ? el("span", {}, "Restore or redirect ", pageLink(issues.failed[0]), ".")
+      : issues.noindex.length ? el("span", {}, "Allow indexing on ", pageLink(issues.noindex[0]), " if it should appear in search.")
+      : issues.needsJs.length ? el("span", {}, "Put the main content of ", pageLink(issues.needsJs[0]), " directly in its HTML.")
+      : null;
+    const contentGap = questions.find((q) => q.verdict === "missing" && q.add_to)
+      || questions.find((q) => q.verdict === "partly" && q.add_to);
+    const geoFix = site.certificate_problem ? seoFix
+      : crawlerBlock ? "Update robots.txt to let the blocked AI search crawlers read public pages."
+      : contentGap ? el("span", {}, "Answer “", contentGap.question, "” on ", pageLink(contentGap.add_to), ".")
+      : null;
+    box.replaceChildren(
+      scoreCard(seoTitle, seo, seoWhy, seoNote, seoFix),
+      scoreCard(geoTitle, geo, geoWhy, geoNote, geoFix),
+    );
+  }
+
+  function renderReport(row) {
+    const box = $("report");
+    const building = row && row.status === "building";
+    $("report-button").disabled = building;
+    $("report-button").textContent = row && row.report ? "Build it again" : "Build the report";
+    $("report-status").textContent = building
+      ? "Building the report…"
+      : row && row.status === "failed" ? row.error
+      : row && row.report ? `Built ${new Date(row.finished_at * 1000).toLocaleString()}.` : "";
+    box.hidden = !(row && row.report);
+    if (box.hidden) return;
+
+    const r = row.report;
+    const important = r.access.filter((f) => f.severity !== "low");
+    const informational = r.access.filter((f) => f.severity === "low");
+    const auditTags = Object.entries(SEVERITY_WORDS).flatMap(([severity, label]) => {
+      const count = r.access.filter((f) => f.severity === severity).length;
+      return count ? [tag(`${count} ${label}`, severity)] : [];
+    });
+    const parts = [
+      auditTags.length ? el("div", { class: "audit-summary" }, el("strong", { text: "Crawler audit" }), ...auditTags) : null,
+      r.ai ? el("div", { class: "audit-overview" }, el("strong", { text: "AI site summary" }), el("p", { text: r.ai.business })) : null,
+    ].filter(Boolean);
+
+    parts.push(el("h3", { text: "Can AI crawlers read your site?" }));
+    parts.push(...important.map(findingBlock));
+    if (informational.length) {
+      parts.push(reportGroup(`Informational notes (${informational.length})`, informational.map(findingBlock)));
+    }
+    if (!r.access.length) parts.push(el("p", { class: "muted", text: "No crawler access issues found on the pages checked." }));
+
+    const questionFindings = [];
+    if (r.visitor_questions.length) {
+      questionFindings.push(...r.visitor_questions.map((q) => el("div", { class: "finding" },
+        el("div", { class: "head" }, tag(q.times > 1 ? `Asked ${q.times} times` : "Asked by a visitor", "missing"), " ", q.question),
+        q.missing ? el("p", { text: q.missing }) : null,
+      )));
+    }
+    if (r.ai) {
+      const open = r.ai.questions.filter((q) => q.verdict !== "answered");
+      const answered = r.ai.questions.filter((q) => q.verdict === "answered");
+      questionFindings.push(...open.map(questionBlock));
+      if (answered.length) questionFindings.push(reportGroup(`Answered questions (${answered.length})`, answered.map(questionBlock)));
+    }
+    if (questionFindings.length) parts.push(reportGroup("Question coverage", questionFindings));
+
+    if (r.ai) {
+      if (r.ai.contradictions.length) parts.push(reportGroup(`Conflicting information (${r.ai.contradictions.length})`,
+        r.ai.contradictions.map((c) => el("div", { class: "finding" },
+            el("div", { class: "head" }, tag("Worth fixing", "medium"), " ", c.topic),
+            ...c.statements.map((s) => el("blockquote", {}, `“${s.quote}” `, pageLink(s))),
+            el("p", {}, el("b", { text: "Fix: " }), "Decide which is right and make both pages say it."),
+          ))));
+
+      if (r.ai.vague_claims.length) parts.push(reportGroup(`Unsupported claims (${r.ai.vague_claims.length})`,
+        r.ai.vague_claims.map((v) => el("div", { class: "finding" },
+            el("div", { class: "head" }, tag("For information", "low"), ` “${v.claim}”`),
+            el("p", {}, "On ", pageLink(v)),
+            el("p", {}, el("b", { text: "Fix: " }), v.evidence_needed),
+          ))));
+    } else if (r.ai_note) {
+      parts.push(el("p", { class: "warning", text: r.ai_note }));
+    }
+
+    if (r.freshness.length) parts.push(reportGroup("Content freshness", r.freshness.map(findingBlock)));
+
+    const how = [`${r.pages_read} pages were read.`];
+    if (r.ai) {
+      how.push(`The ${r.ai.coverage.questions_tested} questions were written by AI from the home page and the list of pages.`);
+      how.push(r.ai.coverage.judged_against === "every passage"
+        ? "Each was judged against every passage on the site."
+        : "The site is too large to read whole, so each was judged against the closest passages a search found, with a second, wider search for any not found answered. A question marked not answered can still mean the answer is there but hard to find.");
+      how.push(`Contradictions and claims: ${r.ai.coverage.passages_checked} of ${r.ai.coverage.passages_total} passages were checked.`);
+    }
+    parts.push(reportGroup("How this was checked", [el("p", { class: "muted", text: how.join(" ") })]));
+    box.replaceChildren(...parts);
+  }
+
+  function reportGroup(title, findings) {
+    return el("details", { class: "report-group" }, el("summary", { text: title }), ...findings);
+  }
+
+  function cell(text) { const td = document.createElement("td"); td.textContent = text ?? ""; return td; }
+  function tag(text, kind) { const s = document.createElement("span"); s.className = `tag ${kind}`; s.textContent = text; return s; }
+
+  async function load() {
+    const requestedSite = siteId;
+    const response = await fetch(`/api/sites/${requestedSite}`);
+    if (!response.ok) return;
+    const data = await response.json();
+    if (requestedSite !== siteId) return;
+    const { site, counts, pages, questions, friction, ai } = data;
+    renderPreparedness(site, pages, data.gap_report);
+    renderReport(data.gap_report);
+    const building = !!data.gap_report && data.gap_report.status === "building";
+    scope = site.scope;
+
+    $("result").hidden = false;
+    $("site-title").textContent = site.scope;
+    const reading = site.status === "crawling";
+    $("status").textContent = reading
+      ? `Reading… ${counts.ok || 0} pages so far.`
+      : site.status === "failed"
+        ? `This site could not be read. ${site.error}${/security certificate is invalid/.test(site.error || "") ? " To read it anyway, tick the box above and try again." : ""}`
+        : `Finished. ${counts.ok || 0} pages read.${site.over_limit ? ` ${site.over_limit.toLocaleString()} more were found but not read, because of the page limit.` : ""}`;
+    $("cert-warning").hidden = !site.certificate_problem;
+    $("cert-warning").textContent = site.certificate_problem
+      ? `This site was read even though its security certificate is invalid: ${site.certificate_problem}. Fix that first. Browsers warn visitors away, and AI crawlers will refuse the site.`
+      : "";
+    $("crawl-button").disabled = reading;
+
+    const tiles = [
+      [counts.ok || 0, "pages read"],
+      [counts.blocked || 0, "blocked by robots.txt"],
+      [counts.needs_js || 0, "empty without JavaScript"],
+      [counts.forms || 0, "different forms found"],
+      [(counts.error || 0), "failed to load"],
+    ];
+    $("tiles").replaceChildren(...tiles.map(([n, label]) => {
+      const t = document.createElement("div"); t.className = "tile";
+      const b = document.createElement("b"); b.textContent = n;
+      const s = document.createElement("span"); s.textContent = label;
+      t.append(b, s); return t;
+    }));
+
+    $("pages-note").hidden = pages.length <= MAX_ROWS;
+    $("pages-note").textContent = `Showing the first ${MAX_ROWS} of ${pages.length.toLocaleString()} entries.`;
+    $("pages").replaceChildren(...pages.slice(0, MAX_ROWS).map((p) => {
+      const tr = document.createElement("tr");
+      const page = document.createElement("td");
+      const a = document.createElement("a"); a.href = p.url; a.target = "_blank"; a.rel = "noopener";
+      a.textContent = p.title || p.url;
+      page.appendChild(a);
+      const result = document.createElement("td");
+      result.appendChild(tag(STATUS_WORDS[p.status] || p.status, p.status));
+      if (p.needs_js) { result.append(" "); result.appendChild(tag("Needs JavaScript", "js")); }
+      tr.append(page, result, cell(VIA_WORDS[p.found_via] || p.found_via), cell(p.note));
+      return tr;
+    }));
+
+    $("snippet").textContent = `<script src="${location.origin}/widget.js" defer><\/script>`;
+    $("ai-status").textContent = ai.ai_enabled
+      ? `AI answers are on, using ${ai.model}.`
+      : "AI answers are off because no API key is set. Until then, replies list the closest passages, and form problems are explained from the page itself.";
+
+    $("no-friction").hidden = friction.length > 0;
+    $("friction-table").hidden = friction.length === 0;
+    $("friction").replaceChildren(...friction.map((f) => {
+      const tr = document.createElement("tr");
+      const why = document.createElement("td");
+      why.textContent = CAUSE_WORDS[f.cause] || f.cause;
+      if (f.reasons.length) {
+        const list = document.createElement("ul");
+        list.style.cssText = "margin:4px 0 0;padding-left:18px";
+        for (const r of f.reasons) {
+          const li = document.createElement("li");
+          li.textContent = f.times > 1 ? `${r.text} (${r.times} of ${f.times})` : r.text;
+          list.appendChild(li);
+        }
+        why.appendChild(list);
+      }
+      tr.append(
+        cell(new URL(f.page_url).pathname),
+        cell(`${KIND_WORDS[f.kind] || f.kind} ${f.target}`),
+        why,
+        cell(String(f.times)),
+        cell(f.helped ? `${f.helped} of ${f.times}` : "No"),
+      );
+      return tr;
+    }));
+    $("jev-status").textContent = data.jev_enabled
+      ? "Unclear cases are checked by Jev before any help is offered."
+      : "Unclear cases are recorded here but no help is offered, because no TypeSafe key is set. Form problems are diagnosed without it.";
+
+    $("no-questions").hidden = questions.length > 0;
+    $("questions-table").hidden = questions.length === 0;
+    $("questions").replaceChildren(...questions.map((q) => {
+      const tr = document.createElement("tr");
+      const covered = document.createElement("td");
+      if (q.covered === 1) covered.appendChild(tag("Yes", "ok"));
+      else if (q.covered === 0) covered.appendChild(tag("No", "no"));
+      else covered.textContent = "Not judged (no AI)";
+      tr.append(cell(q.question), cell(CATEGORY_WORDS[q.category] || "Not labelled"), covered, cell(q.missing));
+      return tr;
+    }));
+
+    if ((reading || building) && !timer) timer = setInterval(load, 2000);
+    if (!reading && !building && timer) { clearInterval(timer); timer = null; }
+    refreshPicker();
+  }
+
+  async function refreshPicker() {
+    const { sites } = await fetch("/api/sites").then((r) => r.json());
+    $("picker-row").hidden = sites.length < 2;
+    $("picker").replaceChildren(...sites.map((s) => {
+      const option = document.createElement("option");
+      option.value = s.id;
+      option.textContent = s.scope;
+      option.dataset.url = s.start_url;
+      option.selected = s.id === siteId;
+      return option;
+    }));
+  }
+
+  $("report-button").addEventListener("click", async () => {
+    $("report-button").disabled = true;
+    $("report-status").textContent = "Starting…";
+    const response = await fetch(`/api/sites/${siteId}/gap-report`, { method: "POST" });
+    if (!response.ok) {
+      const data = await response.json();
+      $("report-status").textContent = data.detail || "The report could not be started.";
+      $("report-button").disabled = false;
+      return;
+    }
+    if (!timer) timer = setInterval(load, 2000);
+    load();
+  });
+
+  $("picker").addEventListener("change", () => {
+    siteId = $("picker").value;
+    $("url").value = $("picker").selectedOptions[0].dataset.url;
+    load();
+  });
+
+  $("crawl-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    $("status").textContent = "Starting…";
+    const response = await fetch("/api/crawl", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: $("url").value,
+        max_pages: Number($("max-pages").value),
+        allow_invalid_certificate: $("allow-invalid-cert").checked,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) { $("status").textContent = data.detail || "That address could not be read."; return; }
+    siteId = data.site_id;
+    if (timer) clearInterval(timer);
+    timer = setInterval(load, 1000);
+    load();
+  });
+
+  $("ask-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    $("ask-button").disabled = true;
+    $("answer").textContent = "Checking the site…";
+    const response = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ host: scope, page_url: "", question: $("question").value, page_state: null }),
+    });
+    const data = await response.json();
+    $("answer").textContent = response.ok
+      ? [data.answer, data.sources.length ? "From: " + data.sources.map((s) => s.title).join(", ") : "", data.notice].filter(Boolean).join("\n\n")
+      : (data.detail || "That question could not be answered.");
+    $("ask-button").disabled = false;
+    load();
+  });
+
+  // Reopen the most recently read site, if there is one.
+  fetch("/api/sites").then((r) => r.json()).then(({ sites }) => {
+    if (sites.length) { siteId = sites[0].id; $("url").value = sites[0].start_url; load(); }
+  });
+</script>
+</body>
+</html>
